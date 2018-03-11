@@ -168,8 +168,10 @@ namespace evsocks {
 
         std::string str() const {
             if (ErrorContent *ec = this->ptr.get()) {
+                char buf[512];
+                strerror_r(ec->code, buf, sizeof(buf));
                 return strfmt("[%s:%d]: %s (%s)",
-                    ErrType2Str(ec->type), ec->code, ec->msg.c_str(), strerror(ec->code));  // FIXME: strerror is thread unsafe
+                    ErrType2Str(ec->type), ec->code, ec->msg.c_str(), buf);
             } else {
                 return "";
             }
