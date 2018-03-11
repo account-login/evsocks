@@ -25,60 +25,32 @@ namespace tz { namespace ctxlog {
     boost::thread_specific_ptr<ContextData> _ContextDataHolder<T>::instance;
 
     struct ContextData {
-        ContextData() : used(0) {}
-
         std::string buf;
-        size_t used;
         vector<size_t> stack;
 
         void push() {
-            this->stack.push_back(this->used);
+            this->stack.push_back(this->buf.size());
         }
 
         void append_kv(const std::string &key, const std::string &value) {
             size_t grow = 1 + key.size() + 1 + value.size() + 1;
-            if (buf.size() < used + grow) {
-                buf.resize(used + grow);
-            }
-
-            buf[used++] = '[';
-
-            ::memcpy(&buf[used], key.data(), key.size());
-            used += key.size();
-
-            buf[used++] = ':';
-
-            ::memcpy(&buf[used], value.data(), value.size());
-            used += value.size();
-
-            buf[used++] = ']';
-
-            if (used < buf.size()) {
-                buf[used] = '\0';
-            }
+            buf.reserve(buf.size() + grow);
+            buf.push_back('[');
+            buf.append(key);
+            buf.push_back(':');
+            buf.append(value);
+            buf.push_back(']');
         }
 
         void append(const std::string &data) {
-            if (buf.size() < used + data.size()) {
-                buf.resize(used + data.size());
-            }
-
-            ::memcpy(&buf[used], data.data(), data.size());
-            used += data.size();
-
-            if (used < buf.size()) {
-                buf[used] = '\0';
-            }
+            buf.reserve(buf.size() + data.size());
+            buf.append(data);
         }
 
         void pop() {
             assert(!this->stack.empty());
-            this->used = this->stack.back();
+            buf.resize(this->stack.back());
             this->stack.pop_back();
-            assert(this->used <= this->buf.size());
-            if (this->used < this->buf.size()) {
-                this->buf[this->used] = '\0';
-            }
             // buf do not shrink
         }
 
