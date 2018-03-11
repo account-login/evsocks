@@ -35,12 +35,9 @@ namespace evsocks {
         ERR_SETSOCKOPT,
         ERR_FD_NOT_FOUND,
         ERR_FD_INVALID,
-        ERR_POLL,
         ERR_SHUTDOWN,
         ERR_PIPE,
         ERR_FCNTL,
-        ERR_REACTOR_CAN_NOT_START,
-        ERR_REACTOR_SHUTDOWN,
         ERR_BAD_VERSION,
         ERR_BAD_METHOD_NUM,
         ERR_BAD_ATYPE,
@@ -74,12 +71,9 @@ namespace evsocks {
         CASE_ARM(ERR_SETSOCKOPT);
         CASE_ARM(ERR_FD_NOT_FOUND);
         CASE_ARM(ERR_FD_INVALID);
-        CASE_ARM(ERR_POLL);
         CASE_ARM(ERR_SHUTDOWN);
         CASE_ARM(ERR_PIPE);
         CASE_ARM(ERR_FCNTL);
-        CASE_ARM(ERR_REACTOR_CAN_NOT_START);
-        CASE_ARM(ERR_REACTOR_SHUTDOWN);
         CASE_ARM(ERR_BAD_VERSION);
         CASE_ARM(ERR_BAD_METHOD_NUM);
         CASE_ARM(ERR_BAD_ATYPE);
@@ -159,11 +153,6 @@ namespace evsocks {
             } else {
                 return __g_error__<void>::empty;
             }
-        }
-
-        bool is_again() const {
-            int32_t errcode = this->code();
-            return errcode == EWOULDBLOCK || errcode == EAGAIN;
         }
 
         std::string str() const {
