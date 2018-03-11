@@ -10,6 +10,11 @@
 using namespace evsocks;
 
 
+static bool is_again(int32_t err) {
+    return err == EAGAIN || err == EWOULDBLOCK || err == EINTR;
+}
+
+
 Error IOChannel::write(const char *data, size_t count) {
     assert(this->consumer != NULL);
     assert(!this->producer_eof);
@@ -19,7 +24,7 @@ Error IOChannel::write(const char *data, size_t count) {
         // bypass write buffer
         ssize_t n = ::write(this->consumer->fd, data, count);
         if (n < 0) {
-            if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+            if (!is_again(errno)) {
                 return Error(ERR_WRITE, errno, "IOChannel::write() error");
             }
             written = 0;
@@ -77,7 +82,7 @@ Error IOChannel::flush() {
         this->buf.peek(data, count);
         ssize_t n = ::write(this->consumer->fd, data, count);
         if (n < 0) {
-            if (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR) {
+            if (!is_again(errno)) {
                 return Error(ERR_WRITE, errno, "IOChannel::flush() error");
             }
             break;

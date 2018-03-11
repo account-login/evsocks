@@ -20,6 +20,11 @@ static Error close_fd(int fd) {
     return err;
 }
 
+static bool is_again(int32_t err) {
+    return err == EAGAIN || err == EWOULDBLOCK || err == EINTR;
+}
+
+
 // libev callbacks
 static void server_accept_cb(EV_P_ ev_io *w, int revents);
 static void server_timer_cb(EV_P_ ev_timer *w, int revents);
@@ -112,7 +117,7 @@ static void client_recv_cb(EV_P_ ev_io *io, int revents) {
     char buf[k_read_buf_size];
     ssize_t data_size = ::read(client.fd, buf, sizeof(buf));
     if (data_size < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        if (is_again(errno)) {
             CTXLOG_WARN("unexpected EAGAIN!");
             return;
         }
@@ -504,7 +509,7 @@ static void remote_recv_cb(EV_P_ ev_io *io, int revents) {
     char buf[k_read_buf_size];
     ssize_t n = ::read(remote.fd, buf, sizeof(buf));
     if (n < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+        if (is_again(errno)) {
             CTXLOG_WARN("unexpected EAGAIN!");
             return;
         }
@@ -607,8 +612,7 @@ static void udp_client_recv_cb(EV_P_ ev_io *io, int revents) {
     Addr addr;
     Error err = net_recvfrom(udp_client.fd, buf, sizeof(buf), datalen, MSG_DONTWAIT, addr);
     if (!err.ok()) {
-        int32_t code = err.code();
-        if (code != EAGAIN && code != EWOULDBLOCK && code != EINTR) {
+        if (!is_again(err.code())) {
             CTXLOG_ERR("%s", err.str().c_str());
         }
         return;
@@ -657,8 +661,7 @@ static void udp_client_recv_cb(EV_P_ ev_io *io, int revents) {
     size_t sent = 0;
     err = net_sendto(udp_remote.fd, payload, payload_len, sent, MSG_DONTWAIT, to_addr);
     if (!err.ok()) {
-        int32_t code = err.code();
-        if (code == EAGAIN || code == EWOULDBLOCK) {
+        if (is_again(err.code())) {
             CTXLOG_WARN("send to remote got EAGAIN, drop packet");
         } else {
             CTXLOG_ERR("send to remote error: %s", err.str().c_str());
@@ -706,8 +709,7 @@ static void udp_remote_recv_cb(EV_P_ ev_io *io, int revents) {
     Addr addr;
     Error err = net_recvfrom(udp_remote.fd, buf, sizeof(buf), datalen, MSG_DONTWAIT, addr);
     if (!err.ok()) {
-        int32_t code = err.code();
-        if (code != EAGAIN && code != EWOULDBLOCK && code != EINTR) {
+        if (!is_again(err.code())) {
             CTXLOG_ERR("%s", err.str().c_str());
         }
         return;
@@ -727,8 +729,7 @@ static void udp_remote_recv_cb(EV_P_ ev_io *io, int revents) {
     size_t sent = 0;
     err = net_sendto(udp_remote.fd, packet.data(), packet.size(), sent, MSG_DONTWAIT, client.udp_client_from);
     if (!err.ok()) {
-        int32_t code = err.code();
-        if (code == EAGAIN || code == EWOULDBLOCK) {
+        if (is_again(err.code())) {
             CTXLOG_WARN("send to client got EAGAIN, drop packet");
         } else {
             CTXLOG_ERR("send to client error: %s", err.str().c_str());
