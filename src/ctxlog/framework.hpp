@@ -7,7 +7,7 @@
 #include <boost/thread/tss.hpp>
 
 #include "../string_util.hpp"
-#include "../misc.hpp"
+#include "../conv_util.hpp"
 
 
 namespace tz { namespace ctxlog {

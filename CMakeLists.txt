@@ -8,7 +8,7 @@ add_definitions(-Wall -Wextra -g)
 add_definitions(-O2)
 
 set(SRC_UTIL
-    src/string_util.hpp src/misc.hpp
+    src/string_util.hpp src/conv_util.hpp
     src/ctxlog/framework.hpp src/ctxlog/ctxlog_evsocks.hpp
     src/dlist.hpp src/timeout_list.hpp
     src/stb_sprintf.c

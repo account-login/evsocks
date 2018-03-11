@@ -1,6 +1,4 @@
-#ifndef SOCKS_LEARNING_ADDR_H
-#define SOCKS_LEARNING_ADDR_H
-
+#pragma once
 
 #include <sys/socket.h>
 #include <stdint.h>
@@ -44,5 +42,3 @@ namespace evsocks {
     };
 
 }
-
-#endif //SOCKS_LEARNING_ADDR_H

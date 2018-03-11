@@ -1,5 +1,4 @@
-#ifndef EVSOCKS_TCP_H
-#define EVSOCKS_TCP_H
+#pragma once
 
 #include "addr.h"
 #include "error.h"
@@ -16,6 +15,3 @@ namespace evsocks {
     Error net_sendto(int fd, const char *buf, size_t len, size_t &sent, int flags, const Addr &addr);
     Error net_local_addr(int fd, Addr &local_addr);
 }
-
-
-#endif //EVSOCKS_TCP_H

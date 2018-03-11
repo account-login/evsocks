@@ -1,5 +1,4 @@
-#ifndef EVSOCKS_DLIST_H
-#define EVSOCKS_DLIST_H
+#pragma once
 
 #include <cstddef>
 #include <cassert>
@@ -231,5 +230,3 @@ namespace tz {
 #define TZ_DLIST(T, member) tz::DList<T, offsetof(T, member)>
 
 }
-
-#endif //EVSOCKS_DLIST_H
