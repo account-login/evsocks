@@ -15,7 +15,7 @@ set(SRC_UTIL
 )
 set(SRCS
     src/main.cpp src/server.cpp src/auth.cpp src/addr.cpp src/bufqueue.cpp
-    src/tcp.cpp src/iochannel.cpp src/error.h
+    src/net.cpp src/iochannel.cpp src/error.h
 )
 
 add_executable(evsocks ${SRCS} ${SRC_UTIL})

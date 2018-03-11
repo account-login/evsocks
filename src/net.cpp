@@ -7,7 +7,7 @@
 #include <fcntl.h>
 
 #include "ctxlog/ctxlog_evsocks.hpp"
-#include "tcp.h"
+#include "net.h"
 
 
 namespace evsocks {
