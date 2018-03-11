@@ -110,7 +110,7 @@ namespace tz {
 
         template <class ValueType, class NodeType>
         struct iterator_impl : base_iterator_impl<iterator_impl, ValueType, NodeType> {
-            iterator_impl(NodeType *node)
+            explicit iterator_impl(NodeType *node)
                 : base_iterator_impl<iterator_impl, ValueType, NodeType>(node)
             {}
             // Pre-increment & decrement
@@ -120,7 +120,7 @@ namespace tz {
 
         template <class ValueType, class NodeType>
         struct rev_iterator_impl : base_iterator_impl<rev_iterator_impl, ValueType, NodeType> {
-            rev_iterator_impl(NodeType *node)
+            explicit rev_iterator_impl(NodeType *node)
                 : base_iterator_impl<rev_iterator_impl, ValueType, NodeType>(node)
             {}
             // Pre-increment & decrement
