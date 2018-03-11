@@ -66,7 +66,7 @@ namespace tz {
 
             NodeType *node;
 
-            // implicit construct from DListNode
+            // construct from DListNode
             explicit base_iterator_impl(NodeType *node) : node(node) {}
 
             // Pre-increment & decrement
