@@ -21,9 +21,11 @@ set(SRCS
 add_executable(evsocks ${SRCS} ${SRC_UTIL})
 
 find_library(LIBEV NAMES libev.a ev)
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost COMPONENTS thread)
+# set(Boost_USE_STATIC_LIBS ON)
+# find_package(Boost COMPONENTS thread)
 target_link_libraries(evsocks
-    ${LIBEV} ${Boost_LIBRARIES}
-    -static-libgcc -static-libstdc++ -static
+    ${LIBEV}
+    boost_thread boost_system
+    # ${Boost_LIBRARIES}
+    # -static-libgcc -static-libstdc++ -static
 )

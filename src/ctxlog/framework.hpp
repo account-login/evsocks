@@ -33,8 +33,6 @@ namespace tz { namespace ctxlog {
         }
 
         void append_kv(const std::string &key, const std::string &value) {
-            size_t grow = 1 + key.size() + 1 + value.size() + 1;
-            buf.reserve(buf.size() + grow);
             buf.push_back('[');
             buf.append(key);
             buf.push_back(':');
@@ -43,7 +41,6 @@ namespace tz { namespace ctxlog {
         }
 
         void append(const std::string &data) {
-            buf.reserve(buf.size() + data.size());
             buf.append(data);
         }
 
@@ -77,15 +74,6 @@ namespace tz { namespace ctxlog {
         ~Context() {
             this->ctxdata.pop();
         }
-
-        // Context &fmt(string fmt, ...) {
-        //     assert(!this->ctxdata.stk.empty());
-        //     va_list ap;
-        //     va_start(ap, fmt);
-        //     this->ctxdata.stk.back().append(vstrfmt(fmt, ap));
-        //     va_end(ap);
-        //     return *this;
-        // }
 
         template <class T>
         Context &set(const string &key, const T &value) {
