@@ -158,6 +158,7 @@ namespace evsocks {
         std::string str() const {
             if (ErrorContent *ec = this->ptr.get()) {
                 // strerror_r is stupid
+                // TODO: hiredis
                 const char *errmsg = 0 <= ec->code && ec->code < sys_nerr
                     ? sys_errlist[ec->code]
                     : "Unknown error";
