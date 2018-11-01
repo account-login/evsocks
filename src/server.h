@@ -96,6 +96,10 @@ namespace evsocks {
     struct Server {
         // public
         IServerHandler *handler;
+        typedef void (*TermCb)(void *userdata);
+        bool term_req;
+        TermCb term_cb;
+        void *term_userdata;
 
         // private
         struct ev_loop *loop;
@@ -113,9 +117,14 @@ namespace evsocks {
         IdleTimeoutList idle_timeouts;
 
         // public
-        explicit Server(IServerHandler *handler);
+        Server(struct ev_loop *loop, IServerHandler *handler);
 
-        Error start(EV_P_ const string &host, uint16_t port);
+        Error init();
+        Error start_listen(const string &host, uint16_t port);
+        Error stop_listen();
+        void term(TermCb cb, void *userdata);
+
+        size_t clients() const;
 
         // private
         void on_connection(int fd, const Addr &addr);

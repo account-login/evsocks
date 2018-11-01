@@ -18,16 +18,22 @@ namespace evsocks {
 
     template <class T, size_t offset>
     struct TimeoutList {
+        // param
         ev_tstamp timeout;
+        // readonly
+        size_t size;
+
         typedef tz::DList<T, offset + offsetof(TimeoutTracer, node)> ListType;
         ListType list;
 
-        explicit TimeoutList(ev_tstamp timeout) : timeout(timeout) {}
+        explicit TimeoutList(ev_tstamp timeout) : timeout(timeout), size(0) {}
 
         void touch(ev_tstamp now, T &obj) {
             get_tracer(obj).last_activity = now;
             if (this->list.is_linked(obj)) {
                 this->list.erase(obj);
+            } else {
+                this->size++;
             }
             this->list.push_back(obj);
         }
@@ -35,6 +41,7 @@ namespace evsocks {
         void remove(T &obj) {
             if (this->list.is_linked(obj)) {
                 this->list.erase(obj);
+                this->size--;
             }
         }
 

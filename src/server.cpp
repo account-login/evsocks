@@ -35,6 +35,7 @@ static void remote_recv_cb(EV_P_ ev_io *io, int revents);
 static void udp_client_recv_cb(EV_P_ ev_io *io, int revents);
 static void udp_remote_recv_cb(EV_P_ ev_io *io, int revents);
 
+static void check_term_cb(Server *s);
 
 static const size_t k_read_buf_size = 1024 * 16;
 static const size_t k_udp_read_buf_size = 1024 * 64;
@@ -43,27 +44,16 @@ static const size_t k_write_buf_max_size = 1024 * 64;
 static DefaultServerHandler g_default_handler;
 
 
-Server::Server(IServerHandler *handler)
+Server::Server(struct ev_loop *loop, IServerHandler *handler)
     : handler(handler ? handler : static_cast<IServerHandler *>(&g_default_handler))
-    , loop(NULL), listen_fd(-1)
+    , term_req(false), term_cb(NULL), term_userdata(NULL)
+    , loop(loop), listen_fd(-1)
     , client_timeouts(5.0), remote_timeouts(5.0), idle_timeouts(60 * 10)
 {
     ev_init(&this->listen_io, server_accept_cb);
 }
 
-Error Server::start(EV_P_ const string &host, uint16_t port) {
-    assert(this->loop == NULL);
-
-    Error err = tcp_listen(this->listen_fd, host, port, SOMAXCONN);
-    if (!err.ok()) {
-        return err;
-    }
-
-    this->loop = EV_A;
-
-    ev_io_set(&this->listen_io, this->listen_fd, EV_READ);
-    ev_io_start(this->loop, &this->listen_io);
-
+Error Server::init() {
     ev_tstamp min_timeout = std::min(std::min(
         this->client_timeouts.timeout,
         this->remote_timeouts.timeout),
@@ -72,6 +62,39 @@ Error Server::start(EV_P_ const string &host, uint16_t port) {
     ev_timer_start(this->loop, &this->timer);
 
     return Ok();
+}
+
+Error Server::start_listen(const string &host, uint16_t port) {
+    assert(this->listen_fd == -1);
+    Error err = tcp_listen(this->listen_fd, host, port, SOMAXCONN);
+    if (!err.ok()) {
+        return err;
+    }
+
+    ev_io_set(&this->listen_io, this->listen_fd, EV_READ);
+    ev_io_start(this->loop, &this->listen_io);
+
+    return Ok();
+}
+
+Error Server::stop_listen() {
+    // terminate if no clients
+    check_term_cb(this);
+
+    if (this->listen_fd < 0) {
+        return Ok();
+    }
+
+    ev_io_stop(this->loop, &this->listen_io);
+    int fd = this->listen_fd;
+    this->listen_fd = -1;
+    return close_fd(fd);
+}
+
+void Server::term(TermCb cb, void *userdata) {
+    this->term_req = true;
+    this->term_cb = cb;
+    this->term_userdata = userdata;
 }
 
 static void server_accept_cb(EV_P_ ev_io *w, int revents) {
@@ -806,6 +829,20 @@ void Server::on_udp_peer_done(UDPPeer &peer) {
     delete &peer;
 }
 
+static void check_term_cb(Server *s) {
+    if (s->clients() == 0 && s->term_req) {
+        // invoke termination cb
+        s->term_cb(s->term_userdata);
+
+        s->term_req = false;
+        s->term_cb = NULL;
+        s->term_userdata = NULL;
+
+        // stop timer
+        ev_timer_stop(s->loop, &s->timer);
+    }
+}
+
 void Server::on_client_done(ClientConn &client) {
     CTXLOG_INFO("client done");
 
@@ -832,6 +869,9 @@ void Server::on_client_done(ClientConn &client) {
     this->client_timeouts.remove(client);
     this->idle_timeouts.remove(client);
     delete &client;
+
+    // invoke termination callback
+    check_term_cb(this);
 }
 
 void Server::on_remote_done(RemoteConn &remote) {
@@ -845,4 +885,10 @@ void Server::on_remote_done(RemoteConn &remote) {
 void Server::on_client_error(ClientConn &client, Error err) {
     CTXLOG_ERR("client error: %s", err.str().c_str());
     this->on_client_done(client);
+}
+
+size_t Server::clients() const {
+    assert(this->client_timeouts.size >= this->remote_timeouts.size);
+    assert(this->client_timeouts.size >= this->idle_timeouts.size);
+    return this->client_timeouts.size;
 }
