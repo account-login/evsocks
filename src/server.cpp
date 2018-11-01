@@ -1,3 +1,4 @@
+#include <math.h>
 #include <unistd.h>
 
 #include "server.h"
@@ -91,10 +92,23 @@ Error Server::stop_listen() {
     return close_fd(fd);
 }
 
-void Server::term(TermCb cb, void *userdata) {
+Error Server::term(TermCb cb, void *userdata) {
     this->term_req = true;
     this->term_cb = cb;
     this->term_userdata = userdata;
+    return this->stop_listen();
+}
+
+static void on_client_force_term(ClientConn &client) {
+    CTXLOG_SET("client", client.addr_str).set("remote", client.remote ? client.remote->addr_str : "nil");
+    client.server->on_client_done(client);
+}
+
+Error Server::force_term() {
+    CTXLOG_PUSH_FUNC();
+    // kick all clients
+    this->client_timeouts.each_timeouts(INFINITY, on_client_force_term);
+    return this->stop_listen();
 }
 
 static void server_accept_cb(EV_P_ ev_io *w, int revents) {

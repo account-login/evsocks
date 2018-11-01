@@ -25,11 +25,14 @@ static void setup() {
 struct SigCatcher {
     ev_signal watcher;
     Server *server;
+    uint32_t int_count;
+
+    SigCatcher() : server(NULL), int_count(0) {}
 };
 
 
 static void term_cb(void *userdata) {
-    CTXLOG_INFO("terminating");
+    CTXLOG_INFO("exiting loop");
     struct ev_loop *loop = (struct ev_loop *)userdata;
     ev_break(loop, EVBREAK_ALL);
 }
@@ -38,11 +41,18 @@ static void term_cb(void *userdata) {
 static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents) {
     (void)revents;
 
-    Server *server = ((SigCatcher *)(void *)w)->server;
-    CTXLOG_INFO("stop listening. current clients: %zu", server->clients());
+    SigCatcher *catcher = (SigCatcher *)(void *)w;
+    catcher->int_count++;
+    Server *server = catcher->server;
+    CTXLOG_INFO("interuption #%u. stop listening. current clients: %zu", catcher->int_count, server->clients());
 
-    server->term(term_cb, loop);
-    Error err = server->stop_listen();
+    Error err;
+    if (catcher->int_count == 1) {
+        err = server->term(term_cb, loop);
+    } else {
+        err = server->force_term();
+    }
+
     if (!err.ok()) {
         CTXLOG_ERR("%s", err.str().c_str());
     }

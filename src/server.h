@@ -122,7 +122,8 @@ namespace evsocks {
         Error init();
         Error start_listen(const string &host, uint16_t port);
         Error stop_listen();
-        void term(TermCb cb, void *userdata);
+        Error term(TermCb cb, void *userdata);
+        Error force_term();
 
         size_t clients() const;
 
