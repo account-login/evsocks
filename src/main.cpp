@@ -14,7 +14,7 @@ static void setup() {
     typedef void (*sighandler_t)(int);
     sighandler_t rv = ::signal(SIGPIPE, SIG_IGN);
     if (rv == SIG_ERR) {
-        CTXLOG_ERR("%s", Error(ERR_SIGNAL, errno, "signal(SIGPIPE, SIG_IGN) error"));
+        CTXLOG_ERR("%s", Error(ERR_SIGNAL, errno, "signal(SIGPIPE, SIG_IGN) error").str().c_str());
     }
 
     // log

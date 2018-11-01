@@ -115,7 +115,10 @@ namespace evsocks { namespace log {
     }
 
 
-    inline void log(int level, const char *fmt, ...) {
+    inline void log(int level, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+
+    inline void log(int level, const char *fmt, ...)
+    {
         std::string buf = Time::Now().str();
         buf.reserve(buf.size() + 1 + 6 + 1);
         buf.push_back(' ');

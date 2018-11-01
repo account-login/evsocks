@@ -345,7 +345,7 @@ void ClientConn::cmd_connect(const Addr &remote_addr) {
     Addr local_addr;
     err = net_local_addr(connfd, local_addr);
     if (!err.ok()) {
-        CTXLOG_ERR("%s", err.str());
+        CTXLOG_ERR("%s", err.str().c_str());
     }
 
     // reply
