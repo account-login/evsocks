@@ -49,6 +49,7 @@ namespace evsocks {
         ERR_TIMEOUT,
         ERR_UNEXPECTED_DATA,
         ERR_BAD_PACKET,
+        ERR_BAD_USERNAME_AUTH_VERSION,
     };
 
     inline const char *ErrType2Str(ErrorType errtype) {
@@ -85,6 +86,7 @@ namespace evsocks {
         CASE_ARM(ERR_TIMEOUT);
         CASE_ARM(ERR_UNEXPECTED_DATA);
         CASE_ARM(ERR_BAD_PACKET);
+        CASE_ARM(ERR_BAD_USERNAME_AUTH_VERSION);
 #undef CASE_ARM
         default:
             assert(!"Unreachable");

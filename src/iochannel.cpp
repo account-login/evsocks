@@ -11,7 +11,7 @@ using namespace evsocks;
 
 
 static bool is_again(int32_t err) {
-    return err == EAGAIN || err == EWOULDBLOCK || err == EINTR;
+    return err == EAGAIN || err == EWOULDBLOCK || err == EINTR || err == ENOTCONN;
 }
 
 

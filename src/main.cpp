@@ -1,6 +1,10 @@
 #include <signal.h>
+#include <getopt.h>
+#include <stdio.h>
+#include <string>
 
 #include "ctxlog/ctxlog_evsocks.hpp"
+#include "conv_util.hpp"
 #include "server.h"
 
 
@@ -68,13 +72,105 @@ static void sigint_cb(struct ev_loop *loop, ev_signal *w, int revents) {
     } while (0)
 
 
-int main() {
+struct Argument {
+    std::string listen;
+    std::string username;
+    std::string password;
+};
+
+static void usage(const char *prog) {
+    const char *text =
+        "Usage: %s [-l IP:PORT] [-u USER -p PASS]\n"
+        "Arguments:\n"
+        "   -l, --listen IP:PORT\n"
+        "       Server address.\n"
+        "   -u, --username\n"
+        "   -p, --password\n"
+        "       Authentication.\n";
+    fprintf(stdout, text, prog);
+}
+
+static Argument get_args(int argc, char *argv[]) {
+    Argument args;
+    args.listen = ":1080";
+
+    // https://www.gnu.org/software/libc/manual/html_node/Getopt-Long-Option-Example.html
+    while (true) {
+        struct option long_options[] = {
+            /* These options don't set a flag.
+                We distinguish them by their indices. */
+            {"help",  no_argument, 0, 'h'},
+            {"listen",  required_argument, 0, 'l'},
+            {"username", required_argument, 0, 'u'},
+            {"password", required_argument, 0, 'p'},
+            {0, 0, 0, 0}
+        };
+
+        /* getopt_long stores the option index here. */
+        int option_index = 0;
+        int c = getopt_long(argc, argv, "hl:u:p:", long_options, &option_index);
+        /* Detect the end of the options. */
+        if (c == -1)
+            break;
+
+        switch (c) {
+        case 'l':
+            args.listen = optarg;
+            break;
+        case 'u':
+            args.username = optarg;
+            break;
+        case 'p':
+            args.password = optarg;
+            break;
+        case '?':
+            /* getopt_long already printed an error message. */
+            // fallthrough
+        case 'h':
+            // fallthrough
+        default:
+            usage(argv[0]);
+            exit(1);
+        }
+    }
+
+    return args;
+}
+
+int main(int argc, char **argv) {
+    // parse args
+    Argument args = get_args(argc, argv);
+    std::string listen_ip;
+    uint16_t listen_port = 0;
+    {
+        size_t pos = args.listen.find(':');
+        if (pos == std::string::npos) {
+            CTXLOG_ERR("illegal args: --listen IP:PORT");
+            return 1;
+        }
+
+        listen_ip = args.listen.substr(0, pos);
+        listen_port = tz::cast<std::string, uint16_t>(args.listen.substr(pos + 1), 0u);
+    }
+
+    // global env setup
     setup();
 
     // use the default event loop unless you have special needs
     struct ev_loop *loop = EV_DEFAULT;
 
-    Server server(loop, NULL);
+    // auth
+    DefaultServerHandler default_handler;
+    PasswordServerHandler pass_handler;
+    IServerHandler *handler;
+    if (args.username.empty() && args.password.empty()) {
+        handler = &default_handler;
+    } else {
+        pass_handler.user2pass[args.username] = args.password;
+        handler = &pass_handler;
+    }
+
+    Server server(loop, handler);
 
     SigCatcher sigcatcher;
     sigcatcher.server = &server;
@@ -82,7 +178,7 @@ int main() {
     ev_signal_start(loop, &sigcatcher.watcher);
 
     TRY(server.init());
-    TRY(server.start_listen("", 1080));
+    TRY(server.start_listen(listen_ip, listen_port));
 
     CTXLOG_INFO("starting server...");
     ev_run(loop, 0);
